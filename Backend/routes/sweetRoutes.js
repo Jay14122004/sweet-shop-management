@@ -18,4 +18,15 @@ router.post('/', async (req, res) => {
   }
 });
 
+
+// View All Sweets
+router.get('/', async (req, res) => {
+  try {
+    const sweets = await Sweet.find().sort({ createdAt: -1 });
+    res.json(sweets);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
