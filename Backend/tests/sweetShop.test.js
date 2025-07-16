@@ -294,3 +294,75 @@ describe('GET /api/sweets', () => {
       expect(response.body.error).toBe('Sweet not found');
     });
   });
+
+
+  describe('POST /api/sweets/:id/restock', () => {
+    it('should restock sweet and increase quantity', async () => {
+      const sweet = await Sweet.create({
+        name: 'Kaju Katli',
+        category: 'Nut-Based',
+        price: 50,
+        quantity: 10
+      });
+
+      const response = await request(app)
+        .post(`/api/sweets/${sweet._id}/restock`)
+        .send({ quantity: 15 })
+        .expect(200);
+
+      expect(response.body.message).toBe('Restock successful');
+      expect(response.body.sweet.quantity).toBe(25);
+      expect(response.body.restockDetails).toEqual({
+        restockedQuantity: 15,
+        previousStock: 10,
+        newStock: 25
+      });
+
+      // Verify in database
+      const updatedSweet = await Sweet.findById(sweet._id);
+      expect(updatedSweet.quantity).toBe(25);
+    });
+
+    it('should return 404 when sweet not found', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      
+      const response = await request(app)
+        .post(`/api/sweets/${fakeId}/restock`)
+        .send({ quantity: 10 })
+        .expect(404);
+
+      expect(response.body.error).toBe('Sweet not found');
+    });
+
+    it('should return 400 for invalid quantity', async () => {
+      const sweet = await Sweet.create({
+        name: 'Test Sweet',
+        category: 'Test',
+        price: 10,
+        quantity: 5
+      });
+
+      const response = await request(app)
+        .post(`/api/sweets/${sweet._id}/restock`)
+        .send({ quantity: -5 })
+        .expect(400);
+
+      expect(response.body.error).toBe('Quantity must be a positive number');
+    });
+
+    it('should handle large restock quantities', async () => {
+      const sweet = await Sweet.create({
+        name: 'Test Sweet',
+        category: 'Test',
+        price: 10,
+        quantity: 100
+      });
+
+      const response = await request(app)
+        .post(`/api/sweets/${sweet._id}/restock`)
+        .send({ quantity: 1000 })
+        .expect(200);
+
+      expect(response.body.sweet.quantity).toBe(1100);
+    });
+  });
