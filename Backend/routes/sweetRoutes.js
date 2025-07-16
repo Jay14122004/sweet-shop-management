@@ -138,4 +138,48 @@ router.post('/:id/purchase', async (req, res) => {
   }
 });
 
+
+// Restock Sweet
+router.post('/:id/restock', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { quantity } = req.body;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid sweet ID' });
+    }
+
+    // Validate quantity
+    if (!quantity || quantity <= 0 || !Number.isInteger(quantity)) {
+      return res.status(400).json({ error: 'Quantity must be a positive number' });
+    }
+
+    // Find sweet
+    const sweet = await Sweet.findById(id);
+    if (!sweet) {
+      return res.status(404).json({ error: 'Sweet not found' });
+    }
+
+    // Store previous quantity for response
+    const previousQuantity = sweet.quantity;
+
+    // Update quantity
+    sweet.quantity += quantity;
+    await sweet.save();
+
+    res.json({
+      message: 'Restock successful',
+      sweet,
+      restockDetails: {
+        restockedQuantity: quantity,
+        previousStock: previousQuantity,
+        newStock: sweet.quantity
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
