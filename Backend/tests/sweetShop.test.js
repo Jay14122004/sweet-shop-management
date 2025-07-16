@@ -100,3 +100,46 @@ describe('GET /api/sweets', () => {
       expect(response.body[1].name).toBe('First Sweet');
     });
   });
+
+
+  describe('DELETE /api/sweets/:id', () => {
+    it('should delete a sweet by ID', async () => {
+      // Create a sweet first
+      const sweet = await Sweet.create({
+        name: 'Gulab Jamun',
+        category: 'Milk-Based',
+        price: 10,
+        quantity: 50
+      });
+
+      // Delete the sweet
+      const response = await request(app)
+        .delete(`/api/sweets/${sweet._id}`)
+        .expect(200);
+
+      expect(response.body.message).toBe('Sweet deleted successfully');
+      expect(response.body.sweet._id).toBe(sweet._id.toString());
+
+      // Verify it's deleted from database
+      const deletedSweet = await Sweet.findById(sweet._id);
+      expect(deletedSweet).toBeNull();
+    });
+
+    it('should return 404 when trying to delete non-existent sweet', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      
+      const response = await request(app)
+        .delete(`/api/sweets/${fakeId}`)
+        .expect(404);
+
+      expect(response.body.error).toBe('Sweet not found');
+    });
+
+    it('should return 400 for invalid ObjectId', async () => {
+      const response = await request(app)
+        .delete('/api/sweets/invalid-id')
+        .expect(400);
+
+      expect(response.body.error).toBe('Invalid sweet ID');
+    });
+  });
