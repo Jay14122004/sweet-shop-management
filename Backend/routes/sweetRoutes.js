@@ -52,4 +52,39 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+
+
+// Search Sweets (must be before /:id routes)
+router.get('/search', async (req, res) => {
+  try {
+    const { name, category, minPrice, maxPrice } = req.query;
+    
+    // Build search query
+    const searchQuery = {};
+    
+    if (name) {
+      searchQuery.name = { $regex: name, $options: 'i' };
+    }
+    
+    if (category) {
+      searchQuery.category = category;
+    }
+    
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      searchQuery.price = {};
+      if (minPrice !== undefined) {
+        searchQuery.price.$gte = parseFloat(minPrice);
+      }
+      if (maxPrice !== undefined) {
+        searchQuery.price.$lte = parseFloat(maxPrice);
+      }
+    }
+
+    const sweets = await Sweet.find(searchQuery).sort({ createdAt: -1 });
+    res.json(sweets);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
