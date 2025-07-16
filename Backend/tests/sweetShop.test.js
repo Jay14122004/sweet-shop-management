@@ -143,3 +143,83 @@ describe('GET /api/sweets', () => {
       expect(response.body.error).toBe('Invalid sweet ID');
     });
   });
+
+
+
+  describe('GET /api/sweets/search', () => {
+    beforeEach(async () => {
+      // Add test data
+      await Sweet.create([
+        { name: 'Kaju Katli', category: 'Nut-Based', price: 50, quantity: 20 },
+        { name: 'Gajar Halwa', category: 'Vegetable-Based', price: 30, quantity: 15 },
+        { name: 'Gulab Jamun', category: 'Milk-Based', price: 10, quantity: 50 },
+        { name: 'Almond Katli', category: 'Nut-Based', price: 60, quantity: 10 }
+      ]);
+    });
+
+    it('should search sweets by name (case insensitive)', async () => {
+      const response = await request(app)
+        .get('/api/sweets/search?name=kaju')
+        .expect(200);
+
+      expect(response.body.length).toBe(1);
+      expect(response.body[0].name).toBe('Kaju Katli');
+    });
+
+    it('should search sweets by partial name match', async () => {
+      const response = await request(app)
+        .get('/api/sweets/search?name=katli')
+        .expect(200);
+
+      expect(response.body.length).toBe(2);
+      expect(response.body.some(sweet => sweet.name === 'Kaju Katli')).toBe(true);
+      expect(response.body.some(sweet => sweet.name === 'Almond Katli')).toBe(true);
+    });
+
+    it('should search sweets by category', async () => {
+      const response = await request(app)
+        .get('/api/sweets/search?category=Nut-Based')
+        .expect(200);
+
+      expect(response.body.length).toBe(2);
+      expect(response.body.every(sweet => sweet.category === 'Nut-Based')).toBe(true);
+    });
+
+    it('should search sweets by price range', async () => {
+      const response = await request(app)
+        .get('/api/sweets/search?minPrice=20&maxPrice=40')
+        .expect(200);
+
+      expect(response.body.length).toBe(1);
+      expect(response.body[0].price).toBe(30);
+      expect(response.body[0].name).toBe('Gajar Halwa');
+    });
+
+    it('should search sweets by minimum price only', async () => {
+      const response = await request(app)
+        .get('/api/sweets/search?minPrice=50')
+        .expect(200);
+
+      expect(response.body.length).toBe(2);
+      expect(response.body.every(sweet => sweet.price >= 50)).toBe(true);
+    });
+
+    it('should combine multiple search criteria', async () => {
+      const response = await request(app)
+        .get('/api/sweets/search?category=Nut-Based&maxPrice=55')
+        .expect(200);
+
+      expect(response.body.length).toBe(1);
+      expect(response.body[0].name).toBe('Kaju Katli');
+    });
+
+    it('should return empty array when no matches found', async () => {
+      const response = await request(app)
+        .get('/api/sweets/search?name=nonexistent')
+        .expect(200);
+
+      expect(response.body.length).toBe(0);
+    });
+  });
+
+  
