@@ -29,4 +29,27 @@ router.get('/', async (req, res) => {
   }
 });
 
+
+// Delete Sweet
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid sweet ID' });
+    }
+
+    const sweet = await Sweet.findByIdAndDelete(id);
+    
+    if (!sweet) {
+      return res.status(404).json({ error: 'Sweet not found' });
+    }
+
+    res.json({ message: 'Sweet deleted successfully', sweet });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
