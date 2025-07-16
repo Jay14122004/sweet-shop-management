@@ -222,4 +222,75 @@ describe('GET /api/sweets', () => {
     });
   });
 
-  
+  describe('POST /api/sweets/:id/purchase', () => {
+    it('should purchase sweet and decrease quantity', async () => {
+      // Create a sweet first
+      const sweet = await Sweet.create({
+        name: 'Kaju Katli',
+        category: 'Nut-Based',
+        price: 50,
+        quantity: 20
+      });
+
+      // Purchase 5 units
+      const response = await request(app)
+        .post(`/api/sweets/${sweet._id}/purchase`)
+        .send({ quantity: 5 })
+        .expect(200);
+
+      expect(response.body.message).toBe('Purchase successful');
+      expect(response.body.sweet.quantity).toBe(15);
+      expect(response.body.purchaseDetails).toEqual({
+        purchasedQuantity: 5,
+        totalCost: 250,
+        remainingStock: 15
+      });
+
+      // Verify in database
+      const updatedSweet = await Sweet.findById(sweet._id);
+      expect(updatedSweet.quantity).toBe(15);
+    });
+
+    it('should return 400 when not enough stock', async () => {
+      const sweet = await Sweet.create({
+        name: 'Kaju Katli',
+        category: 'Nut-Based',
+        price: 50,
+        quantity: 5
+      });
+
+      const response = await request(app)
+        .post(`/api/sweets/${sweet._id}/purchase`)
+        .send({ quantity: 10 })
+        .expect(400);
+
+      expect(response.body.error).toBe('Not enough stock available. Available: 5, Requested: 10');
+    });
+
+    it('should return 400 for invalid quantity', async () => {
+      const sweet = await Sweet.create({
+        name: 'Test Sweet',
+        category: 'Test',
+        price: 10,
+        quantity: 5
+      });
+
+      const response = await request(app)
+        .post(`/api/sweets/${sweet._id}/purchase`)
+        .send({ quantity: 0 })
+        .expect(400);
+
+      expect(response.body.error).toBe('Quantity must be a positive number');
+    });
+
+    it('should return 404 for non-existent sweet', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      
+      const response = await request(app)
+        .post(`/api/sweets/${fakeId}/purchase`)
+        .send({ quantity: 1 })
+        .expect(404);
+
+      expect(response.body.error).toBe('Sweet not found');
+    });
+  });
