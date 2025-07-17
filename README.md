@@ -32,11 +32,7 @@ This is a full-featured RESTful backend built using *Express.js, **MongoDB (Atla
 # 1. Install dependencies
 npm install
 
-# 2. Set your MongoDB URI
-Create a .env file:
-MONGODB_URI=mongodb+srv://kapadiyajay555:qGGfusWG1lBDWhOE@cluster0.53sxj9y.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
-
-# 3. Run in dev mode
+# 2. Run in dev mode
 npm run dev
 
 
